@@ -1,0 +1,33 @@
+name: WebCenter
+options:
+  bundleIdPrefix: sk.webcenter
+  deploymentTarget:
+    iOS: "15.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "2"
+    IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+    CODE_SIGNING_ALLOWED: "NO"
+    CODE_SIGNING_REQUIRED: "NO"
+    CODE_SIGN_IDENTITY: ""
+targets:
+  WebCenter:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+        excludes:
+          - Info.plist
+      - path: Resources/Assets.xcassets
+      - path: Resources/assets
+        type: folder
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: sk.webcenter.app
+        PRODUCT_NAME: WebCenter
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_FILE: Sources/Info.plist
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
