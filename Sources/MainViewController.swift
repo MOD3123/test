@@ -16,7 +16,7 @@ final class MainViewController: UIViewController {
     private let reloadButton = MainViewController.barButton("arrow.clockwise", "Obnoviť stránku")
     private let logoView = UIImageView(image: UIImage(named: "Logo"))
     private let progress = UIProgressView(progressViewStyle: .bar)
-    private let tabBar = UITabBar()
+    private let tabBar = BottomNavBar()
     private let dimView = UIView()
     private let drawer = DrawerView()
     private let solitaireClose = MainViewController.barButton("xmark", "Zavrieť")
@@ -71,7 +71,7 @@ final class MainViewController: UIViewController {
         startMonitor()
 
         if let first = bottomItems.first {
-            tabBar.selectedItem = tabBar.items?.first
+            tabBar.select(index: 0)
             drawer.select(index: 0)
             go(first.url)
         }
@@ -140,9 +140,13 @@ final class MainViewController: UIViewController {
         progress.translatesAutoresizingMaskIntoConstraints = false
 
         // Spodná lišta
-        tabBar.delegate = self
         tabBar.translatesAutoresizingMaskIntoConstraints = false
-        styleTabBar()
+        tabBar.onSelect = { [weak self] i in
+            guard let self = self, i < self.bottomItems.count else { return }
+            let url = self.bottomItems[i].url
+            self.go(url)
+            self.drawer.select(index: NavCatalog.match(url, in: self.drawerItems))
+        }
 
         // Solitaire tlačidlo
         solitaireClose.tintColor = .white
@@ -224,21 +228,6 @@ final class MainViewController: UIViewController {
         ])
     }
 
-    private func styleTabBar() {
-        let ap = UITabBarAppearance()
-        ap.configureWithOpaqueBackground()
-        ap.backgroundColor = Theme.bg
-        ap.shadowColor = .clear
-        for layout in [ap.stackedLayoutAppearance, ap.inlineLayoutAppearance, ap.compactInlineLayoutAppearance] {
-            layout.normal.iconColor = Theme.iconIdle
-            layout.normal.titleTextAttributes = [.foregroundColor: Theme.iconIdle]
-            layout.selected.iconColor = Theme.iconActive
-            layout.selected.titleTextAttributes = [.foregroundColor: Theme.iconActive]
-        }
-        tabBar.standardAppearance = ap
-        tabBar.scrollEdgeAppearance = ap
-    }
-
     private func buildDrawer() {
         drawer.onSelect = { [weak self] index in
             guard let self = self, index < self.drawerItems.count else { return }
@@ -298,17 +287,12 @@ final class MainViewController: UIViewController {
 
     // MARK: - Menu / navigácia
     private func applyNavSets() {
-        let items = bottomItems.enumerated().map { (i, it) -> UITabBarItem in
-            UITabBarItem(title: it.title, image: sf(it.icon, size: 18), tag: i)
-        }
-        tabBar.setItems(items, animated: false)
+        tabBar.setItems(bottomItems)
         drawer.setItems(drawerItems)
     }
 
     private func highlight(for url: String) {
-        if let i = NavCatalog.match(url, in: bottomItems), let items = tabBar.items, i < items.count {
-            tabBar.selectedItem = items[i]
-        }
+        if let i = NavCatalog.match(url, in: bottomItems) { tabBar.select(index: i) }
         if let j = NavCatalog.match(url, in: drawerItems) { drawer.select(index: j) }
     }
 
@@ -486,7 +470,7 @@ final class MainViewController: UIViewController {
         bottomItems = NavCatalog.offlineBottom
         drawerItems = NavCatalog.offlineDrawer
         applyNavSets()
-        tabBar.selectedItem = tabBar.items?.first
+        tabBar.select(index: 0)
         drawer.select(index: 0)
         [backButton, forwardButton, reloadButton].forEach { $0.isHidden = true }
     }
@@ -527,7 +511,6 @@ final class MainViewController: UIViewController {
             "var m=document.querySelector('meta[name=color-scheme]');" +
             "if(m){m.content='\(scheme)';}else{var n=document.createElement('meta');n.name='color-scheme';n.content='\(scheme)';document.head.appendChild(n);}})()",
             completionHandler: nil)
-        styleTabBar()
         setNeedsStatusBarAppearanceUpdate()
     }
 
@@ -588,15 +571,6 @@ final class MainViewController: UIViewController {
                 }
             }
         }
-    }
-}
-
-// MARK: - UITabBarDelegate
-extension MainViewController: UITabBarDelegate {
-    func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {
-        guard item.tag < bottomItems.count else { return }
-        go(bottomItems[item.tag].url)
-        drawer.select(index: NavCatalog.match(bottomItems[item.tag].url, in: drawerItems))
     }
 }
 
